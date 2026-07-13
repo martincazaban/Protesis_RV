@@ -887,3 +887,10 @@ ModelImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 276394
+  packageName: UnityWarehouse
+  packageVersion: 1.0
+  assetPath: Assets/SourceFiles/StarterAssets/ThirdPersonController/Character/Models/Armature.fbx
+  uploadId: 645178
