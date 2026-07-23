@@ -30,6 +30,8 @@ public class Grabbable : MonoBehaviour
                 Physics.IgnoreCollision(handCol, objCol, true);
             }
         }
+
+        Debug.Log("Ignorar Fisicas");
     }
 
     public void OnRelease(Collider[] handColliders)
@@ -49,6 +51,8 @@ public class Grabbable : MonoBehaviour
                     
                 Physics.IgnoreCollision(handCol, objCol, false);
             }
+
+            Debug.Log("Fisicas Continuan");
         }
     }
 }

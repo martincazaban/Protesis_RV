@@ -18,6 +18,13 @@ public class Finger
 
 public class HandController : MonoBehaviour
 {
+
+    [Header("Movimiento")]
+    public float moveSpeed = 2f;
+
+    [Header("Rotación")]
+    public float rotationSpeed = 100f;
+
     [Header("Configuración de Dedos")]
     [Tooltip("Arrastrá aquí todos los GameObjects que representan los dedos")]
     public Finger[] fingers;
@@ -33,6 +40,8 @@ public class HandController : MonoBehaviour
 
     // Valor normalizado del estado de la mano: 0 (abierta) a 1 (cerrada)
     private float handCloseValue = 0f; 
+
+    private bool rotating = false;
     
     void Start()
     {
@@ -68,6 +77,111 @@ public class HandController : MonoBehaviour
             }
             UpdateFingersRotation();
         }
+
+        /*MoveHand();*/
+        HandleRotationMode();
+    }
+
+    private void MoveHand()
+    {
+        Vector3 movement = Vector3.zero;
+
+        // Adelante / atrás
+        if (Input.GetKey(KeyCode.W))
+            movement += Vector3.forward;
+
+        if (Input.GetKey(KeyCode.S))
+            movement += Vector3.back;
+
+        // Izquierda / derecha
+        if (Input.GetKey(KeyCode.A))
+            movement += Vector3.left;
+
+        if (Input.GetKey(KeyCode.D))
+            movement += Vector3.right;
+
+        // Arriba / abajo
+        if (Input.GetKey(KeyCode.E))
+            movement += Vector3.up;
+
+        if (Input.GetKey(KeyCode.Q))
+            movement += Vector3.down;
+
+        // Normalizar para evitar que diagonal sea más rápida
+        if (movement.magnitude > 1f)
+            movement.Normalize();
+
+        transform.position += movement * moveSpeed * Time.deltaTime;
+    }
+
+    private void HandleRotationMode()
+    {
+        bool mousePressed =
+            Input.GetMouseButton(1);
+
+        // ALT acaba de presionarse
+        if (mousePressed && !rotating)
+        {
+            rotating = true;
+
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
+        // ALT acaba de soltarse
+        else if (!mousePressed && rotating)
+        {
+            rotating = false;
+
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+
+        // Rotar mientras ALT está presionado
+        if (rotating)
+        {
+            RotateHand();
+        }
+    }
+
+    private void RotateHand()
+    {
+        
+        float mouseX = Input.GetAxis("Mouse X");
+        float mouseY = Input.GetAxis("Mouse Y");
+        
+        bool shiftPressed =
+        Input.GetKey(KeyCode.LeftShift) ||
+        Input.GetKey(KeyCode.RightShift);
+
+        if (shiftPressed)
+        {
+            // ROLL
+            // Rotación sobre el eje longitudinal de la mano/brazo
+            transform.Rotate(
+                Vector3.up,
+                -mouseX * rotationSpeed * Time.deltaTime,
+                Space.Self
+            );
+        }
+        /*else
+        {
+            // YAW
+            // Giro horizontal
+            transform.Rotate(
+                Vector3.right,
+                mouseX * rotationSpeed * Time.deltaTime,
+                Space.Self
+            );
+
+            // PITCH
+            // Inclinación vertical
+            transform.Rotate(
+                Vector3.forward,
+                -mouseY * rotationSpeed * Time.deltaTime,
+                Space.Self
+            );
+        }*/
     }
 
     void UpdateFingersRotation()
@@ -90,6 +204,13 @@ public class HandController : MonoBehaviour
             }
 
         }
+    }
+
+    private void OnDisable()
+    {
+        // Asegurarse de liberar el cursor
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 }
 

@@ -8,6 +8,7 @@ public class PalmGrabber : MonoBehaviour
 
     private FixedJoint joint;
     private Rigidbody candidate;
+    private Grabbable candidateGrabbable;
     private Collider[] handColliders;
 
     private void Awake()
@@ -22,20 +23,39 @@ public class PalmGrabber : MonoBehaviour
         if (grab == null)
             return;
 
-        candidate = grab.GetComponent<Rigidbody>();
+        // Obtener Rigidbody del objeto agarrable
+        Rigidbody rb = grab.GetComponent<Rigidbody>();
 
-        grab.OnGrab(handColliders);
-
-        if (other.attachedRigidbody == null)
+        // Si no tiene Rigidbody, no podemos agarrarlo
+        if (rb == null)
             return;
 
-        candidate = other.attachedRigidbody;
+        // Guardamos el candidato
+        candidate = rb;
+        candidateGrabbable = grab;
+
+        Debug.Log("Candidato detectado: " + candidate.name);
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.attachedRigidbody == candidate)
-            candidate = null;
+        Grabbable grab = other.GetComponentInParent<Grabbable>();
+
+        if (grab == null)
+            return;
+
+        // Si el objeto que salió es el candidato
+        if (grab == candidateGrabbable)
+        {
+            // Si todavía no está agarrado, simplemente olvidarlo
+            if (joint == null)
+            {
+                candidate = null;
+                candidateGrabbable = null;
+
+                Debug.Log("Candidato salió de la palma");
+            }
+        }
     }
 
     void Update()
@@ -45,15 +65,12 @@ public class PalmGrabber : MonoBehaviour
 
         if (joint == null && HandClosed())
         {
-            joint = gameObject.AddComponent<FixedJoint>();
-            joint.connectedBody = candidate;
-            joint.breakForce = Mathf.Infinity;
-            joint.breakTorque = Mathf.Infinity;
+            GrabObject();
         }
 
         if (joint != null && !HandClosed())
         {
-            Destroy(joint);
+            ReleaseObject();
         }
     }
 
@@ -66,4 +83,35 @@ public class PalmGrabber : MonoBehaviour
 
         return (sum / hand.fingers.Length) > grabCurl;
     }
+    private void GrabObject()
+    {
+        // Crear FixedJoint
+        joint = gameObject.AddComponent<FixedJoint>();
+
+        joint.connectedBody = candidate;
+
+        joint.breakForce = Mathf.Infinity;
+        joint.breakTorque = Mathf.Infinity;
+
+        // Desactivar colisiones entre la mano y el objeto
+        candidateGrabbable.OnGrab(handColliders);
+
+        Debug.Log("Objeto agarrado: " + candidate.name);
+    }
+
+    private void ReleaseObject()
+    {
+        // Restaurar las colisiones
+        candidateGrabbable.OnRelease(handColliders);
+
+        // Destruir FixedJoint
+        Destroy(joint);
+
+        joint = null;
+        candidate = null;
+        candidateGrabbable = null;
+
+        Debug.Log("Objeto soltado");
+    }
+    
 }
