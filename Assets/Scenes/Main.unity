@@ -137,6 +137,7 @@ GameObject:
   - component: {fileID: 86329717}
   - component: {fileID: 86329716}
   - component: {fileID: 86329715}
+  - component: {fileID: 86329719}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -210,7 +211,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 86329713}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2fadf230d1919748a9aa21d40f74619, type: 3}
   m_Name: 
@@ -371,6 +372,24 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &86329719
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 86329713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a2a9c34df4095f47b9ca8f975175f5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.SpatialTracking::UnityEngine.SpatialTracking.TrackedPoseDriver
+  m_Device: 0
+  m_PoseSource: 2
+  m_PoseProviderComponent: {fileID: 0}
+  m_TrackingType: 0
+  m_UpdateType: 0
+  m_UseRelativeTransform: 0
 --- !u!1 &98866392
 GameObject:
   m_ObjectHideFlags: 0
@@ -588,7 +607,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6dc3c46be03bff4f80543f45c9022f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Grabbable
-  rb: {fileID: 142386813}
 --- !u!1 &158714938
 GameObject:
   m_ObjectHideFlags: 0
@@ -614,7 +632,7 @@ Transform:
   m_GameObject: {fileID: 158714938}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 4, z: 0}
+  m_LocalPosition: {x: 0, y: 4.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -984,7 +1002,7 @@ Transform:
   m_GameObject: {fileID: 826649389}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 4.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1222,7 +1240,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6dc3c46be03bff4f80543f45c9022f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Grabbable
-  rb: {fileID: 880008126}
 --- !u!64 &885786752
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -1605,7 +1622,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6dc3c46be03bff4f80543f45c9022f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Grabbable
-  rb: {fileID: 987138973}
 --- !u!1 &997596229
 GameObject:
   m_ObjectHideFlags: 0
@@ -3528,52 +3544,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cbde6bc52bf2cd24c849d2e86963f0f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HandController
-  moveSpeed: 2
-  rotationSpeed: 999
-  fingers:
-  - name: Thumb
-    joints:
-    - {fileID: 3530165623057190389}
-    - {fileID: 5220889848337135088}
-    - {fileID: 6295804007175632229}
-    initialRotations: []
-    curl: 0
-    blocked: 0
-  - name: Index
-    joints:
-    - {fileID: 4983785453431517287}
-    - {fileID: 3253172729662121637}
-    - {fileID: 617429059269990568}
-    initialRotations: []
-    curl: 0
-    blocked: 0
-  - name: Middle
-    joints:
-    - {fileID: 2592080822285865209}
-    - {fileID: 4496254102134960516}
-    - {fileID: 1400596248668053504}
-    initialRotations: []
-    curl: 0
-    blocked: 0
-  - name: Ring
-    joints:
-    - {fileID: 5538070773859754747}
-    - {fileID: 3756500821473965150}
-    - {fileID: 5215921850982802654}
-    initialRotations: []
-    curl: 0
-    blocked: 0
-  - name: Little
-    joints:
-    - {fileID: 7163325363962225944}
-    - {fileID: 544913329077667930}
-    - {fileID: 6376099475262295944}
-    initialRotations: []
-    curl: 0
-    blocked: 0
-  rotationAxis: {x: -1, y: 0, z: 0}
-  maxBendAngle: 90
-  scrollSensitivity: 2
 --- !u!4 &1065997189921253756
 Transform:
   m_ObjectHideFlags: 0
@@ -8500,9 +8470,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 975cc527d866cdf40bb6d0ab9bf776e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PalmGrabber
-  grabCurl: 0.7
-  hand: {fileID: 919132148974021506}
-  handRoot: {fileID: 6583733711878111945}
 --- !u!136 &7987964433463414485
 CapsuleCollider:
   m_ObjectHideFlags: 0
