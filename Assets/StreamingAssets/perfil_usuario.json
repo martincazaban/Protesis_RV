@@ -1,0 +1,25 @@
+{
+  "usuario": "sujeto_01",
+  "fecha": "2026-10-13",
+  "metodo": "mediapipe_world",
+  "lado": "derecho",
+  "offset_hombro_m": {
+    "x": 0.1582,
+    "y": -0.1787,
+    "z": 0.0
+  },
+  "offset_pecho_m": {
+    "x": 0.0,
+    "y": -0.341,
+    "z": 0.0
+  },
+  "offset_imu_brazo_m": {
+    "x": 0.1907,
+    "y": -0.2885,
+    "z": 0.0
+  },
+  "pecho_estimado": true,
+  "brazo_estimado": false,
+  "confianza": 0.69,
+  "desvio_cm": 1.55
+}
