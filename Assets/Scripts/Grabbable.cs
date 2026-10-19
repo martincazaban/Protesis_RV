@@ -22,6 +22,12 @@ public class Grabbable : MonoBehaviour
     [Tooltip("Tiempo maximo (s) que se siguen ignorando las colisiones con la mano despues de soltar, si el objeto sigue solapado.")]
     public float tiempoMaxSeparacion = 1.0f;
 
+    [Tooltip("Opcional: si se asignan, la palma solo puede tomar el objeto por estos colliders (zona de agarre). Vacio = cualquier collider del objeto.")]
+    public Collider[] zonasAgarre;
+
+    [Tooltip("Velocidad maxima (m/s) con la que la fisica separa al objeto de un solapamiento. Valores bajos evitan que la mano cinematica lo lance al apretarlo contra la mesa o contra otros objetos.")]
+    public float maxVelocidadDepenetracion = 1.0f;
+
     public Estado EstadoActual { get; private set; } = Estado.FueraDeRango;
     public bool IsHeld => EstadoActual == Estado.Agarrado;
     public event Action<Grabbable, Estado> EstadoCambiado;
@@ -35,12 +41,21 @@ public class Grabbable : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+        rb.maxDepenetrationVelocity = maxVelocidadDepenetracion;
         objectColliders = GetComponentsInChildren<Collider>();
     }
 
     private void OnDisable()
     {
         enRangoDe.Clear();
+    }
+
+    /// <summary>True si la palma puede tomar el objeto a traves de este collider.</summary>
+    public bool PermiteAgarreCon(Collider c)
+    {
+        if (zonasAgarre == null || zonasAgarre.Length == 0) return true;
+        foreach (var z in zonasAgarre) if (z == c) return true;
+        return false;
     }
 
     // ------------------------------------------------------------------
@@ -71,6 +86,25 @@ public class Grabbable : MonoBehaviour
         if (restaurar != null) StopCoroutine(restaurar);
         if (isActiveAndEnabled) restaurar = StartCoroutine(RestaurarCuandoSeSepare(handColliders));
         else SetIgnorar(handColliders, false);
+    }
+
+    // ------------------------------------------------------------------
+    //  Pre-agarre: ignorar (parte de) la mano mientras el objeto esta en rango,
+    //  para que los dedos no lo empujen antes de cerrar. Lo usa PalmGrabber.
+    // ------------------------------------------------------------------
+    public void IgnorarColisiones(Collider[] cols)
+    {
+        if (restaurar != null) { StopCoroutine(restaurar); restaurar = null; }
+        SetIgnorar(cols, true);
+    }
+
+    /// <summary>Restaura las colisiones recien cuando el objeto deja de solaparse.</summary>
+    public void RestaurarColisionesSuave(Collider[] cols)
+    {
+        if (cols == null) return;
+        if (restaurar != null) StopCoroutine(restaurar);
+        if (isActiveAndEnabled) restaurar = StartCoroutine(RestaurarCuandoSeSepare(cols));
+        else SetIgnorar(cols, false);
     }
 
     private IEnumerator RestaurarCuandoSeSepare(Collider[] handColliders)
@@ -109,6 +143,7 @@ public class Grabbable : MonoBehaviour
         foreach (Collider handCol in handColliders)
         {
             if (handCol == null) continue;
+            if (!ignorar && PalmGrabber.EsDedoFantasma(handCol)) continue;   // modo DedosSiempre: nunca se restauran
             foreach (Collider objCol in objectColliders)
             {
                 if (objCol == null) continue;

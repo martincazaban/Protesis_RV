@@ -113,4 +113,5 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ss]creenshots.meta
 /[Aa]ssets/_[Rr]ecovery/
 /[Aa]ssets/_[Rr]ecovery.meta
+/[Ll]ogs_[Cc]laude/
 *.slnx
