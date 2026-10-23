@@ -103,6 +103,9 @@ public class ProtesisLink : MonoBehaviour
 
     UdpClient _udp;
     Thread _rx;
+    Thread _keepAlive;                 // PING desde hilo propio: no depende de los tirones del editor
+    volatile bool _detenidoManual;     // true si el usuario pidio STOP (no reanudar solo)
+    float _ultimaReanudacion;
     volatile bool _running;
     volatile bool _gotPacket;          // bandera: el hilo de red no toca Time
 
@@ -146,6 +149,9 @@ public class ProtesisLink : MonoBehaviour
         _rx = new Thread(RxLoop) { IsBackground = true };
         _rx.Start();
 
+        _keepAlive = new Thread(KeepAliveLoop) { IsBackground = true };
+        _keepAlive.Start();
+
         if (!string.IsNullOrEmpty(espIp))
             _esp = new IPEndPoint(IPAddress.Parse(espIp), espPort);
 
@@ -158,6 +164,7 @@ public class ProtesisLink : MonoBehaviour
         if (_esp != null) Send("STOP");
         try { _udp?.Close(); } catch { }
         if (_rx != null && _rx.IsAlive) _rx.Join(600);
+        if (_keepAlive != null && _keepAlive.IsAlive) _keepAlive.Join(600);
     }
 
     void Update()
@@ -204,10 +211,16 @@ public class ProtesisLink : MonoBehaviour
             Handshake();
         }
 
-        if (_esp != null && Time.time - _lastPingTime > 1f)
+        // Reanudacion automatica: si la ESP32 ya se conocia pero el stream se corto
+        // (timeout del micro por un tiron del editor, wifi, etc.), se vuelve a pedir START.
+        if (_esp != null && SchemaReady && !_detenidoManual &&
+            Time.unscaledTime - _lastRxTime > 1f &&
+            Time.unscaledTime - _ultimaReanudacion > 1.5f)
         {
-            Send("PING");
-            _lastPingTime = Time.time;
+            _ultimaReanudacion = Time.unscaledTime;
+            Send("HELLO");
+            Send($"RATE {rateHz}");
+            Send("START");
         }
 
         Connected = (Time.unscaledTime - _lastRxTime) < 2f;
@@ -316,10 +329,22 @@ public class ProtesisLink : MonoBehaviour
     static IPAddress FromUInt(uint v) =>
         new IPAddress(new[] { (byte)(v >> 24), (byte)(v >> 16), (byte)(v >> 8), (byte)v });
 
-    public void Send(string cmd)
+public void Send(string cmd)
     {
         if (_esp == null) return;
+        if (cmd == "STOP") _detenidoManual = true;
+        else if (cmd == "START") _detenidoManual = false;
         SendRaw(cmd, _esp);
+    }
+
+    void KeepAliveLoop()
+    {
+        while (_running)
+        {
+            Thread.Sleep(500);
+            var esp = _esp;
+            if (esp != null && _running) SendRaw("PING", esp, false);
+        }
     }
 
     void SendRaw(string cmd, IPEndPoint target, bool avisarError = true)

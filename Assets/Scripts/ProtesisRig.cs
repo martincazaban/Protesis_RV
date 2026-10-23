@@ -59,6 +59,16 @@ public class ProtesisRig : MonoBehaviour
     public Vector3 offsetPecho = new Vector3(0.00f, -0.32f, 0f);
     public Vector3 offsetImuBrazo = new Vector3(0.20f, -0.38f, 0f);
 
+    [Header("Hombro imaginario")]
+    [Tooltip("Distancia (en el marco de PivoteBrazo, reposo = brazo colgando hacia -Y) entre el hombro imaginario " +
+             "y el punto donde nace el modelo de la protesis (tope del socket, sobre el munon). La IMU rota TODO " +
+             "alrededor del hombro, no alrededor del socket: asi el movimiento nace cerca de la cabeza.")]
+    public Vector3 segmentoHombroModelo = new Vector3(0f, -0.20f, 0f);
+    [Tooltip("Si esta activo, el hombro acompaña la posicion de la cabeza (no su rotacion), con suavizado.")]
+    public bool seguirCabeza = true;
+    [Tooltip("Constante de tiempo (s) del seguimiento de cabeza. Mas alto = mas estable.")]
+    public float constanteSeguimientoS = 0.5f;
+
     [Header("Perfil de usuario")]
     public bool usarPerfil = true;
     [Range(0f, 1f)] public float confianzaMinima = 0.6f;
@@ -95,6 +105,49 @@ public class ProtesisRig : MonoBehaviour
 
         Debug.Log($"[ProtesisRig] hombro {offsetHombro} | pecho {offsetPecho} | " +
                   $"imu brazo {offsetImuBrazo}  (fuente: {origenOffsets})");
+    }
+
+    [Header("Posicion fija")]
+    [Tooltip("Si esta activo, el hombro se ubica siempre en 'origenFijo' (mundo) y no sigue a la cabeza. " +
+             "Lo activa PosicionSesion para que la protesis no cambie de lugar al iniciar.")]
+    public bool usarOrigenFijo = false;
+    public Vector3 origenFijo;
+
+    /// <summary>Ubica la protesis en esta posicion de ojos (mundo) desde ya y la deja fija.</summary>
+    public void FijarOrigen(Vector3 posicionOjos)
+    {
+        origenFijo = posicionOjos;
+        usarOrigenFijo = true;
+        if (head == null && Camera.main != null) head = Camera.main.transform;
+        Ubicar();
+    }
+
+    Vector3 OrigenBase() => usarOrigenFijo ? origenFijo : head.position;
+
+    private Vector3 origenActual;
+    private bool iniciado;
+
+    void LateUpdate()
+    {
+        if (!iniciado || !seguirCabeza || head == null || torso == null || anclaHombro == null) return;
+        float k = 1f - Mathf.Exp(-Time.deltaTime / Mathf.Max(0.01f, constanteSeguimientoS));
+        origenActual = usarOrigenFijo ? origenFijo : Vector3.Lerp(origenActual, head.position, k);
+        MoverNodos(origenActual);
+    }
+
+    void MoverNodos(Vector3 origen)
+    {
+        torso.position = origen;
+        anclaHombro.position = origen + offsetHombro;
+        if (marcadorPecho != null) marcadorPecho.position = origen + offsetPecho;
+    }
+
+    /// <summary>Vuelve a ubicar el hombro sobre la cabeza actual, sin suavizado (tras recentrar la camara).</summary>
+    public void ReubicarAhora()
+    {
+        if (head == null && Camera.main != null) head = Camera.main.transform;
+        if (head == null) return;
+        Ubicar();
     }
 
     [ContextMenu("Recargar perfil y reubicar")]
@@ -143,7 +196,7 @@ public class ProtesisRig : MonoBehaviour
     {
         if (torso == null || anclaHombro == null) return;
 
-        Vector3 origen = head.position;
+        Vector3 origen = OrigenBase();
 
         // El torso pivota en el punto de la cabeza. No rota nunca: su rotacion
         // queda en identidad a proposito (ver el comentario de arriba).
@@ -152,6 +205,8 @@ public class ProtesisRig : MonoBehaviour
 
         anclaHombro.position = origen + offsetHombro;
         anclaHombro.rotation = Quaternion.identity;
+        origenActual = origen;
+        iniciado = true;
 
         AlinearModeloAlPivote();
 
@@ -291,6 +346,7 @@ public class ProtesisRig : MonoBehaviour
             UnityEditor.Undo.RecordObject(protesis, "Alinear modelo al pivote");
 #endif
         protesis.position += pivoteBrazo.position - hueso.position;
+        protesis.position += pivoteBrazo.TransformVector(segmentoHombroModelo);
         MedirLargo(out _);
     }
 

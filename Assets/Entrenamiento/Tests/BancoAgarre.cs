@@ -46,7 +46,7 @@ namespace Entrenamiento.Tests
             public int fugas;
         }
 
-        PalmGrabber palm; HandController hand; Transform piv; Vector3 hombro;
+        Vector3 ultObj; Quaternion ultBq = Quaternion.identity; PalmGrabber palm; HandController hand; Transform piv; Vector3 hombro; Entrenamiento.BrazoFisico bfis; Transform palmCmd;
         Collider capOriginal; GameObject zonaActual;
         Grabbable[] cubos; Vector3[] pos0;
         float[] distTab; Vector3[] p0Tab, fwd0Tab; int eActual = -1;
@@ -86,9 +86,9 @@ namespace Entrenamiento.Tests
         IEnumerator Start()
         {
             Time.timeScale = escalaTiempo;
-            palm = FindObjectOfType<PalmGrabber>(); hand = palm.hand; piv = hand.transform.parent; hombro = piv.position;
+            palm = FindObjectOfType<PalmGrabber>(); bfis = FindObjectOfType<Entrenamiento.BrazoFisico>(); if (bfis != null) { var drv = FindObjectOfType<ProtesisArmDriver>(); if (drv != null) drv.enabled = false; hand = bfis.manoObjetivo; piv = bfis.pivoteObjetivo; palmCmd = bfis.palmaObjetivo; } else { hand = palm.hand; piv = hand.transform.parent; palmCmd = palm.transform; } hombro = piv.position;
             capOriginal = palm.GetComponent<CapsuleCollider>();
-            handCols = hand.GetComponentsInChildren<Collider>(true).Where(c => !c.isTrigger).ToArray();
+            handCols = (bfis != null ? bfis.manoFisica : hand).GetComponentsInChildren<Collider>(true).Where(c => !c.isTrigger).ToArray();
             cubos = FindObjectsOfType<Grabbable>().OrderBy(g => g.name).ToArray();
             pos0 = cubos.Select(c => c.transform.position).ToArray();
             ConstruirTabla();
@@ -221,13 +221,20 @@ namespace Entrenamiento.Tests
             Physics.SyncTransforms();
         }
 
+        IEnumerator Esperar(float max)
+        {
+            for (float t = 0f; t < max && (bfis.deltaPct > 2f || Quaternion.Angle(piv.rotation, ultBq) > 0.5f); t += Time.fixedDeltaTime) { Mover(ultObj); yield return new WaitForFixedUpdate(); }
+        }
+
         IEnumerator Prueba(int idx, Vector2 jit, Res r)
         {
             var g = cubos[idx];
             float alto = 0.12f;
             Vector3 baseP = pos0[idx] + new Vector3(jit.x, 0f, jit.y) * jitterEscala;
             hand.SetHandCurl(0f);
+            if (bfis != null) { piv.rotation = Quaternion.identity; eActual = -1; Mover(new Vector3(hombro.x, hombro.y + 0.02f, hombro.z + 0.15f)); yield return Esperar(4f); Mover(new Vector3(baseP.x, hombro.y + 0.02f, hombro.z + 0.55f)); yield return Esperar(8f); }
             Mover(baseP + Vector3.up * alto);
+            if (bfis != null) yield return Esperar(6f);
             yield return new WaitForSeconds(0.5f);
             ResetCubos();
             yield return new WaitForSeconds(0.5f);
@@ -309,7 +316,7 @@ namespace Entrenamiento.Tests
             for (int i = 0; i < N; i++)
             {
                 hand.SetElbowAngle(i * 0.5f); Physics.SyncTransforms();
-                p0Tab[i] = palm.transform.position - hombro; fwd0Tab[i] = palm.transform.forward; distTab[i] = p0Tab[i].magnitude;
+                p0Tab[i] = palmCmd.position - hombro; fwd0Tab[i] = palmCmd.forward; distTab[i] = p0Tab[i].magnitude;
             }
             eActual = -1;
         }
@@ -328,7 +335,8 @@ namespace Entrenamiento.Tests
                 float sc = (q * fwd0Tab[bi]).y;          // la normal de la palma es -forward: queremos que mire hacia abajo
                 if (sc > best) { best = sc; bq = q; }
             }
-            piv.rotation = bq;
+            ultObj = t; ultBq = bq;
+            piv.rotation = bfis != null ? Quaternion.RotateTowards(piv.rotation, bq, 120f * Time.fixedDeltaTime) : bq;
         }
     }
 }

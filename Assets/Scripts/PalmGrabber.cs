@@ -31,6 +31,9 @@ public class PalmGrabber : MonoBehaviour
     private static readonly HashSet<Collider> dedosFantasma = new HashSet<Collider>();
     public static bool EsDedoFantasma(Collider c) { return dedosFantasma.Contains(c); }
 
+    [Tooltip("Opcional: Rigidbody (p. ej. el de la mano fisica) que sostiene la union. Vacio = este objeto.")]
+    public Rigidbody cuerpoUnion;
+
     public HandController hand;
     [Tooltip("Raiz de la mano.")]
     public Transform handRoot;
@@ -236,7 +239,8 @@ public class PalmGrabber : MonoBehaviour
         // primero se ignoran las colisiones, despues se crea la union
         g.OnGrab(armColliders);
 
-        joint = gameObject.AddComponent<FixedJoint>();
+        var hostUnion = cuerpoUnion != null ? cuerpoUnion.gameObject : gameObject;
+        joint = hostUnion.AddComponent<FixedJoint>();
         joint.connectedBody = g.rb;
         joint.enablePreprocessing = false;
         joint.breakForce = Mathf.Infinity;
